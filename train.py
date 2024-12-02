@@ -12,7 +12,7 @@ from src.utils.init_utils import set_random_seed, setup_saving_and_logging
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-@hydra.main(version_base=None, config_path="src/configs", config_name="baseline")
+@hydra.main(version_base=None, config_path="src/configs", config_name="hifigan")
 def main(config):
     """
     Main script for training. Instantiates the model, optimizer, scheduler,
@@ -38,28 +38,40 @@ def main(config):
     dataloaders, batch_transforms = get_dataloaders(config, device)
 
     # build model architecture, then print to console
-    model = instantiate(config.model).to(device)
-    logger.info(model)
+    generator = instantiate(config.generator.model).to(device)
+    discriminator = instantiate(config.discriminator.model).to(device)
+    logger.info(generator)
+    logger.info(discriminator)
 
     # get function handles of loss and metrics
-    loss_function = instantiate(config.loss_function).to(device)
+    gen_loss = instantiate(config.gen_loss).to(device)
+    discr_loss = instantiate(config.discr_loss).to(device)
+
     metrics = instantiate(config.metrics)
 
-    # build optimizer, learning rate scheduler
-    trainable_params = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = instantiate(config.optimizer, params=trainable_params)
-    lr_scheduler = instantiate(config.lr_scheduler, optimizer=optimizer)
+    # build generator, learning rate scheduler
+    g_params = filter(lambda p: p.requires_grad, generator.parameters())
+    optim_g = instantiate(config.optim_g, params=g_params)
+    lr_sched_g = instantiate(config.lr_sched_g, optimizer=optim_g)
+
+    d_params = filter(lambda p: p.requires_grad, discriminator.parameters())
+    optim_d = instantiate(config.optim_d, params=d_params)
+    lr_sched_d = instantiate(config.lr_sched_d, optimizer=optim_d)
 
     # epoch_len = number of iterations for iteration-based training
     # epoch_len = None or len(dataloader) for epoch-based training
     epoch_len = config.trainer.get("epoch_len")
 
     trainer = Trainer(
-        model=model,
-        criterion=loss_function,
+        generator=generator,
+        discriminator=discriminator,
+        gen_loss=gen_loss,
+        discr_loss=discr_loss,
+        optim_g=optim_g,
+        optim_d=optim_d,
+        lr_sched_g=lr_sched_g,
+        lr_sched_d=lr_sched_d,
         metrics=metrics,
-        optimizer=optimizer,
-        lr_scheduler=lr_scheduler,
         config=config,
         device=device,
         dataloaders=dataloaders,

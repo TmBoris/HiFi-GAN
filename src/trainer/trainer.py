@@ -1,3 +1,6 @@
+import torch
+
+from src.logger.utils import plot_spectrogram
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
 
@@ -32,20 +35,44 @@ class Trainer(BaseTrainer):
         metric_funcs = self.metrics["inference"]
         if self.is_train:
             metric_funcs = self.metrics["train"]
-            self.optimizer.zero_grad()
+            self.optim_d.zero_grad()
 
-        outputs = self.model(**batch)
-        batch.update(outputs)
+        gen_outputs = self.generator(**batch)
+        batch.update(gen_outputs)
 
-        all_losses = self.criterion(**batch)
-        batch.update(all_losses)
+        discr_outputs = self.discriminator(
+            gt_audio=batch["gt_audio"], pr_audio=batch["pr_audio"].detach()
+        )
+        batch.update(discr_outputs)
+
+        discr_losses = self.discr_loss(**batch)
+        batch.update(discr_losses)
 
         if self.is_train:
-            batch["loss"].backward()  # sum of all losses is always called loss
-            self._clip_grad_norm()
-            self.optimizer.step()
-            if self.lr_scheduler is not None:
-                self.lr_scheduler.step()
+            batch["discr_loss"].backward()  # sum of all losses is always called loss
+            self._clip_grad_norm(part="discriminator")
+            self.train_metrics.update(
+                "discr_grad_norm", self._get_grad_norm(part="discriminator")
+            )
+            self.optim_d.step()
+
+            self.optim_g.zero_grad()
+
+        discr_outputs = self.discriminator(
+            gt_audio=batch["gt_audio"], pr_audio=batch["pr_audio"]
+        )
+        batch.update(discr_outputs)
+
+        gen_losses = self.gen_loss(**batch)
+        batch.update(gen_losses)
+
+        if self.is_train:
+            batch["gen_loss"].backward()  # sum of all losses is always called loss
+            self._clip_grad_norm(part="generator")
+            self.train_metrics.update(
+                "gen_grad_norm", self._get_grad_norm(part="generator")
+            )
+            self.optim_g.step()
 
         # update metrics for each loss (in case of multiple losses)
         for loss_name in self.config.writer.loss_names:
@@ -72,8 +99,24 @@ class Trainer(BaseTrainer):
 
         # logging scheme might be different for different partitions
         if mode == "train":  # the method is called only every self.log_step steps
-            # Log Stuff
-            pass
+            self.log_predictions(**batch)
+            self.log_spectrogram(**batch)
         else:
-            # Log Stuff
-            pass
+            self.log_predictions(**batch)
+            self.log_spectrogram(**batch)
+
+    def log_spectrogram(self, gt_spec, pr_spec, **batch):
+        spectrogram_for_plot = gt_spec[0].detach().cpu()
+        image = plot_spectrogram(spectrogram_for_plot)
+        self.writer.add_image("gt_spec", image)
+
+        spectrogram_for_plot = pr_spec[0].detach().cpu()
+        image = plot_spectrogram(spectrogram_for_plot)
+        self.writer.add_image("pr_spec", image)
+
+    def log_predictions(self, gt_audio, pr_audio, **batch):
+        # print('gt_audio.shape', gt_audio.shape)
+        # print('pr_audio.shape', pr_audio.shape)
+
+        self.writer.add_audio("gt_audio", gt_audio[0], 22050)
+        self.writer.add_audio("pr_audio", pr_audio[0], 22050)

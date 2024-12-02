@@ -1,0 +1,13 @@
+model:
+  _target_: src.model.Discriminator
+  msd_in_channels: [1, 128, 128, 256, 512, 1024, 1024, 1024]
+  msd_out_channels: [128, 128, 256, 512, 1024, 1024, 1024, 1]
+  msd_kernels: [15, 41, 41, 41, 41, 41, 5, 3]
+  msd_strides: [1, 2, 2, 4, 4, 1, 1, 1]
+  msd_paddings: [7, 20, 20, 20, 20, 20, 2, 1]
+  msd_groups: [1, 4, 16, 16, 16, 16, 1, 1]
+
+  mpd_periods: [2, 3, 5, 7, 11]
+  mpd_kernel_size: 5
+  mpd_stride: 3
+  mpd_channels: [1, 32, 128, 512, 1024, 1024]

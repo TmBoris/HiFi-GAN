@@ -1,0 +1,4 @@
+train:
+  - _target_: src.metrics.L1
+    name: "TRAIN_L1"
+inference: []
