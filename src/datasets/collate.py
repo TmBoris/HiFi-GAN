@@ -1,4 +1,5 @@
 import torch
+from torch.nn.utils.rnn import pad_sequence
 
 
 def collate_fn(dataset_items: list[dict]):
@@ -13,13 +14,24 @@ def collate_fn(dataset_items: list[dict]):
         result_batch (dict[Tensor]): dict, containing batch-version
             of the tensors.
     """
-
     result_batch = {}
 
-    # example of collate_fn
-    result_batch["data_object"] = torch.vstack(
-        [elem["data_object"] for elem in dataset_items]
+    # (batch_size, n_mels, time)
+    result_batch["gt_spec"] = pad_sequence(
+        [sample["spectrogram"].squeeze(0).permute(1, 0) for sample in dataset_items],
+        batch_first=True,
+    ).permute(0, 2, 1)
+
+    result_batch["length"] = torch.tensor(
+        [sample["spectrogram"].size(1) for sample in dataset_items]
     )
-    result_batch["labels"] = torch.tensor([elem["labels"] for elem in dataset_items])
+    result_batch["gt_audio"] = torch.stack(
+        [sample["audio"] for sample in dataset_items]
+    )
+
+    # print(result_batch["gt_spec"].shape)
+    # print(result_batch["gt_audio"].shape)
+
+    # raise
 
     return result_batch
