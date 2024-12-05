@@ -16,7 +16,8 @@ class Inferencer(BaseTrainer):
 
     def __init__(
         self,
-        model,
+        generator,
+        discriminator,
         config,
         device,
         dataloaders,
@@ -56,7 +57,8 @@ class Inferencer(BaseTrainer):
 
         self.device = device
 
-        self.model = model
+        self.generator=generator,
+        self.discriminator=discriminator,
         self.batch_transforms = batch_transforms
 
         # define dataloaders
@@ -93,6 +95,41 @@ class Inferencer(BaseTrainer):
             logs = self._inference_part(part, dataloader)
             part_logs[part] = logs
         return part_logs
+    
+    def _inference_part(self, part, dataloader):
+        """
+        Run inference on a given partition and save predictions
+
+        Args:
+            part (str): name of the partition.
+            dataloader (DataLoader): dataloader for the given partition.
+        Returns:
+            logs (dict): metrics, calculated on the partition.
+        """
+
+        self.is_train = False
+        self.generator.eval()
+
+        self.evaluation_metrics.reset()
+
+        # create Save dir
+        if self.save_path is not None:
+            (self.save_path / part).mkdir(exist_ok=True, parents=True)
+
+        with torch.no_grad():
+            for batch_idx, batch in tqdm(
+                enumerate(dataloader),
+                desc=part,
+                total=len(dataloader),
+            ):
+                batch = self.process_batch(
+                    batch_idx=batch_idx,
+                    batch=batch,
+                    part=part,
+                    metrics=self.evaluation_metrics,
+                )
+
+        return self.evaluation_metrics.result()
 
     def process_batch(self, batch_idx, batch, metrics, part):
         """
@@ -119,7 +156,7 @@ class Inferencer(BaseTrainer):
         batch = self.move_batch_to_device(batch)
         batch = self.transform_batch(batch)  # transform batch on device -- faster
 
-        outputs = self.model(**batch)
+        outputs = self.generator(**batch)
         batch.update(outputs)
 
         if metrics is not None:
@@ -151,38 +188,3 @@ class Inferencer(BaseTrainer):
                 torch.save(output, self.save_path / part / f"output_{output_id}.pth")
 
         return batch
-
-    def _inference_part(self, part, dataloader):
-        """
-        Run inference on a given partition and save predictions
-
-        Args:
-            part (str): name of the partition.
-            dataloader (DataLoader): dataloader for the given partition.
-        Returns:
-            logs (dict): metrics, calculated on the partition.
-        """
-
-        self.is_train = False
-        self.model.eval()
-
-        self.evaluation_metrics.reset()
-
-        # create Save dir
-        if self.save_path is not None:
-            (self.save_path / part).mkdir(exist_ok=True, parents=True)
-
-        with torch.no_grad():
-            for batch_idx, batch in tqdm(
-                enumerate(dataloader),
-                desc=part,
-                total=len(dataloader),
-            ):
-                batch = self.process_batch(
-                    batch_idx=batch_idx,
-                    batch=batch,
-                    part=part,
-                    metrics=self.evaluation_metrics,
-                )
-
-        return self.evaluation_metrics.result()

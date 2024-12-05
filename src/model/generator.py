@@ -49,15 +49,15 @@ class Generator(nn.Module):
     kReluCoef = 0.1
 
     def __init__(
-            self,
-            mrf_kernel_sizes,
-            mrf_dilation_sizes,
-            get_spectrogram,
-            upsample_initial_channel,
-            upsample_kernel_sizes,
-            prepost_conv_kernel_size,
-            n_mels
-            ):
+        self,
+        mrf_kernel_sizes,
+        mrf_dilation_sizes,
+        get_spectrogram,
+        upsample_initial_channel,
+        upsample_kernel_sizes,
+        prepost_conv_kernel_size,
+        n_mels,
+    ):
         super().__init__()
         self.num_kernels = len(mrf_kernel_sizes)
         self.pre_conv = weight_norm(
@@ -77,15 +77,17 @@ class Generator(nn.Module):
             in_c //= 2
             out_c = in_c // 2
             stride = kernel_size // 2
-            self.ups.append(weight_norm(
-                nn.ConvTranspose1d(
-                    in_c,
-                    out_c,
-                    kernel_size,
-                    stride,
-                    padding=(kernel_size - stride) // 2,
-                )
-            ).apply(init_weights))
+            self.ups.append(
+                weight_norm(
+                    nn.ConvTranspose1d(
+                        in_c,
+                        out_c,
+                        kernel_size,
+                        stride,
+                        padding=(kernel_size - stride) // 2,
+                    )
+                ).apply(init_weights)
+            )
 
             for kernel_size, dilations in zip(mrf_kernel_sizes, mrf_dilation_sizes):
                 self.resblocks.append(ResBlock(out_c, kernel_size, dilations))
@@ -98,7 +100,7 @@ class Generator(nn.Module):
             weight_norm(
                 nn.Conv1d(out_c, 1, prepost_conv_kernel_size, padding="same")
             ).apply(init_weights),
-            nn.Tanh()
+            nn.Tanh(),
         )
 
     def forward(self, gt_spec, **batch):

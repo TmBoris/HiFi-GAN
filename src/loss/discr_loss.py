@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 
@@ -24,10 +25,10 @@ class DiscriminatorLoss(nn.Module):
 
     def discriminator_loss(self, gt_audio_finals, pr_audio_finals):
         loss = 0
-        
+
         for gt_audio_final, pr_audio_final in zip(gt_audio_finals, pr_audio_finals):
-            gt_audio_loss = torch.mean((1 - gt_audio_final) ** 2)
-            pr_audio_loss = torch.mean(pr_audio_final ** 2)
+            gt_audio_loss = F.mse_loss(gt_audio_final, torch.ones_like(gt_audio_final))
+            pr_audio_loss = F.mse_loss(pr_audio_final, torch.zeros_like(pr_audio_final))
             loss += gt_audio_loss + pr_audio_loss
 
         return loss

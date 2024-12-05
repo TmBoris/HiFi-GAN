@@ -36,11 +36,11 @@ class GeneratorLoss(nn.Module):
             gt_audio_states_list, pr_audio_states_list
         ):
             for gt_audio_state, pr_audio_state in zip(gt_audio_states, pr_audio_states):
-                loss += torch.mean(torch.abs(gt_audio_state - pr_audio_state))
+                loss += F.l1_loss(gt_audio_state, pr_audio_state)
         return loss
 
     def generator_loss(self, pr_audio_finals):
         loss = 0
         for pr_audio_final in pr_audio_finals:
-            loss += torch.mean((1 - pr_audio_final) ** 2)
+            loss += F.mse_loss(pr_audio_final, torch.ones_like(pr_audio_final))
         return loss

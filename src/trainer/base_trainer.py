@@ -260,7 +260,7 @@ class BaseTrainer:
                 self.train_metrics.reset()
             if batch_idx + 1 >= self.epoch_len:
                 break
-        
+
         if self.lr_sched_d is not None:
             self.lr_sched_d.step()
         if self.lr_sched_g is not None:

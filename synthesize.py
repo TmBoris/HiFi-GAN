@@ -12,7 +12,7 @@ from src.utils.io_utils import ROOT_PATH
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-@hydra.main(version_base=None, config_path="src/configs", config_name="inference")
+@hydra.main(version_base=None, config_path="src/configs", config_name="synthesize")
 def main(config):
     """
     Main script for inference. Instantiates the model, metrics, and
@@ -34,8 +34,10 @@ def main(config):
     dataloaders, batch_transforms = get_dataloaders(config, device)
 
     # build model architecture, then print to console
-    model = instantiate(config.model).to(device)
-    print(model)
+    generator = instantiate(config.generator.model).to(device)
+    discriminator = instantiate(config.discriminator.model).to(device)
+    print(generator)
+    print(discriminator)
 
     # get metrics
     metrics = instantiate(config.metrics)
@@ -45,7 +47,8 @@ def main(config):
     save_path.mkdir(exist_ok=True, parents=True)
 
     inferencer = Inferencer(
-        model=model,
+        generator=generator,
+        discriminator=discriminator,
         config=config,
         device=device,
         dataloaders=dataloaders,
