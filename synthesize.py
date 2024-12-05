@@ -35,9 +35,7 @@ def main(config):
 
     # build model architecture, then print to console
     generator = instantiate(config.generator.model).to(device)
-    discriminator = instantiate(config.discriminator.model).to(device)
     print(generator)
-    print(discriminator)
 
     # get metrics
     metrics = instantiate(config.metrics)
@@ -48,7 +46,6 @@ def main(config):
 
     inferencer = Inferencer(
         generator=generator,
-        discriminator=discriminator,
         config=config,
         device=device,
         dataloaders=dataloaders,

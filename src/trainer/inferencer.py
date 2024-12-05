@@ -1,4 +1,6 @@
 import torch
+import torchaudio
+from torch import nn
 from tqdm.auto import tqdm
 
 from src.metrics.tracker import MetricTracker
@@ -17,7 +19,6 @@ class Inferencer(BaseTrainer):
     def __init__(
         self,
         generator,
-        discriminator,
         config,
         device,
         dataloaders,
@@ -57,8 +58,7 @@ class Inferencer(BaseTrainer):
 
         self.device = device
 
-        self.generator=generator,
-        self.discriminator=discriminator,
+        self.generator = nn.DataParallel(generator)
         self.batch_transforms = batch_transforms
 
         # define dataloaders
@@ -114,7 +114,9 @@ class Inferencer(BaseTrainer):
 
         # create Save dir
         if self.save_path is not None:
-            (self.save_path / part).mkdir(exist_ok=True, parents=True)
+            (self.save_path / 'gt_audio').mkdir(exist_ok=True, parents=True)
+            (self.save_path / 'pr_audio').mkdir(exist_ok=True, parents=True)
+
 
         with torch.no_grad():
             for batch_idx, batch in tqdm(
@@ -166,25 +168,55 @@ class Inferencer(BaseTrainer):
         # Some saving logic. This is an example
         # Use if you need to save predictions on disk
 
-        batch_size = batch["logits"].shape[0]
+        batch_size = batch["gt_audio"].shape[0]
         current_id = batch_idx * batch_size
 
         for i in range(batch_size):
             # clone because of
             # https://github.com/pytorch/pytorch/issues/1995
-            logits = batch["logits"][i].clone()
-            label = batch["labels"][i].clone()
-            pred_label = logits.argmax(dim=-1)
+            ground_truth = batch["gt_audio"][i].clone()
+            predict = batch["pr_audio"][i].clone()
 
             output_id = current_id + i
 
-            output = {
-                "pred_label": pred_label,
-                "label": label,
-            }
-
-            if self.save_path is not None:
-                # you can use safetensors or other lib here
-                torch.save(output, self.save_path / part / f"output_{output_id}.pth")
+            torchaudio.save(
+                self.save_path / "gt_audio" / f'audio_{output_id}.pth',
+                ground_truth.cpu(),
+                22050,
+                channels_first=True,
+                format='flac'
+            )
+            torchaudio.save(
+                self.save_path / "pr_audio" / f'audio_{output_id}.pth',
+                predict.cpu(),
+                22050,
+                channels_first=True,
+                format='flac'
+            )
 
         return batch
+    
+    def _from_pretrained(self, pretrained_path):
+        """
+        Init model with weights from pretrained pth file.
+
+        Notice that 'pretrained_path' can be any path on the disk. It is not
+        necessary to locate it in the experiment saved dir. The function
+        initializes only the model.
+
+        Args:
+            pretrained_path (str): path to the model state dict.
+        """
+        pretrained_path = str(pretrained_path)
+        if hasattr(self, "logger"):  # to support both trainer and inferencer
+            self.logger.info(f"Loading model weights from: {pretrained_path} ...")
+        else:
+            print(f"Loading model weights from: {pretrained_path} ...")
+        checkpoint = torch.load(pretrained_path, self.device)
+
+        if (
+            checkpoint.get("state_dict_g") is not None
+        ):
+            self.generator.load_state_dict(checkpoint["state_dict_g"])
+        else:
+            raise ValueError("state_dicts should be in the checkpoint")

@@ -95,13 +95,12 @@ class Generator(nn.Module):
         self.get_spectrogram = get_spectrogram
         self.lrelu1 = nn.LeakyReLU(self.kReluCoef)
 
-        self.post = nn.Sequential(
-            nn.LeakyReLU(),
-            weight_norm(
+        self.lrelu2 = nn.LeakyReLU()
+        self.post_conv = weight_norm(
                 nn.Conv1d(out_c, 1, prepost_conv_kernel_size, padding="same")
-            ).apply(init_weights),
-            nn.Tanh(),
-        )
+            ).apply(init_weights)
+
+        self.tanh = nn.Tanh()
 
     def forward(self, gt_spec, **batch):
         x = self.pre_conv(gt_spec)
@@ -114,7 +113,7 @@ class Generator(nn.Module):
                 x_summator += self.resblocks[i * self.num_kernels + j](x)
             x_means = x_summator / self.num_kernels
 
-        x = self.post(x_means)
+        x = self.tanh(self.post_conv(self.lrelu2(x_means)))
 
         return {
             "pr_audio": x,
