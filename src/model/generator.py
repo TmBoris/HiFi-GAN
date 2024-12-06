@@ -9,7 +9,7 @@ def init_weights(m, mean=0.0, std=1e-2):
     m.weight.data.normal_(mean, std)
 
 
-class ResBlock(nn.Module):
+class MRF(nn.Module):
     kReluCoef = 0.1
 
     def __init__(self, channels, kernel_size, dilations):
@@ -40,7 +40,8 @@ class ResBlock(nn.Module):
         for i in range(len(self.conv1)):
             resid = x
             x = self.conv1[i](self.lrelu(x))
-            x = self.conv2[i](self.lrelu(x))
+            resid = resid + x
+            x = self.conv2[i](self.lrelu(resid))
             x = x + resid
         return x
 
@@ -70,7 +71,7 @@ class Generator(nn.Module):
         )
 
         self.ups = nn.ModuleList()
-        self.resblocks = nn.ModuleList()
+        self.mrfs = nn.ModuleList()
 
         in_c = upsample_initial_channel * 2
         for kernel_size in upsample_kernel_sizes:
@@ -90,7 +91,7 @@ class Generator(nn.Module):
             )
 
             for kernel_size, dilations in zip(mrf_kernel_sizes, mrf_dilation_sizes):
-                self.resblocks.append(ResBlock(out_c, kernel_size, dilations))
+                self.mrfs.append(MRF(out_c, kernel_size, dilations))
 
         self.get_spectrogram = get_spectrogram
         self.lrelu1 = nn.LeakyReLU(self.kReluCoef)
@@ -108,9 +109,9 @@ class Generator(nn.Module):
         for i in range(len(self.ups)):
             x = self.ups[i](self.lrelu1(x))
             # mrf
-            x_summator = self.resblocks[i * self.num_kernels](x)
+            x_summator = self.mrfs[i * self.num_kernels](x)
             for j in range(self.num_kernels):
-                x_summator += self.resblocks[i * self.num_kernels + j](x)
+                x_summator += self.mrfs[i * self.num_kernels + j](x)
 
         x = self.tanh(self.post_conv(self.lrelu2(x_summator)))
 
