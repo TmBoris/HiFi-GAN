@@ -1,7 +1,7 @@
 _target_: src.logger.WandBWriter
 project_name: "HiFiGAN"
 entity: null
-run_name: "testing"
+run_name: "resynth_on_ljspeech"
 mode: "online"
 loss_names: ["gen_loss", "discr_loss", 'loss_disc_mpd', 'loss_disc_msd', 'adv_gen_loss', 'feature_loss', 'mel_loss'] # which losses to log (useful for multi-loss tasks, s.a. GANs)
 # loss_names: ["gen_loss"]

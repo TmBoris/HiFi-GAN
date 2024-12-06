@@ -1,14 +1,25 @@
 defaults:
-  - discriminator: hifi_discr
   - generator: hifi_gen
-  - metrics: vocoder_metrics
-  - datasets: ljspeech_eval # we do not want to run inference on training data
-  - dataloader: example
-  - transforms: example
+  - writer: wandb
   - _self_
 inferencer:
-  device_tensors: ["gt_spec", "gt_audio", "length"] # which tensors should be on device (ex. GPU)
+  device_tensors: ["gt_audio"] # which tensors should be on device (ex. GPU)
   device: auto # device name or "auto"
-  save_path: "testing" # any name here, can be a dataset name
+  save_path: "fs2_synth_grading_with_ft" # any name here, can be a dataset name
+  input_text_dir: data/datasets/grading_audios
+  input_text: null
+  input_audio_dir: null
   seed: 1
-  from_pretrained: "saved/best_model/model_best.pth" # path to the pretrained model
+  text_to_mel_model: fastspeech2 # fastspeech2 or tacotron2 available
+  from_pretrained: "saved/vanilla_train|mrf_fix_ft/model_best.pth"
+  # from_pretrained: "saved/vanilla_train|mrf_fix/checkpoint-epoch200.pth"
+get_spectrogram:
+  _target_: torchaudio.transforms.MelSpectrogram
+  sample_rate: 22050
+  n_fft: 1024
+  win_length: 1024
+  hop_length: 256
+  n_mels: 80
+  f_max: 8000
+  center: False
+  pad: 384

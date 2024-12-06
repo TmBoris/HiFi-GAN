@@ -115,8 +115,5 @@ class Trainer(BaseTrainer):
         self.writer.add_image("pr_spec", image)
 
     def log_predictions(self, gt_audio, pr_audio, **batch):
-        # print('gt_audio.shape', gt_audio.shape)
-        # print('pr_audio.shape', pr_audio.shape)
-
         self.writer.add_audio("gt_audio", gt_audio[0], 22050)
         self.writer.add_audio("pr_audio", pr_audio[0], 22050)

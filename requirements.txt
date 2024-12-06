@@ -11,6 +11,8 @@ librosa
 ipykernel
 torchvision
 gdown
+g2p-en
+git+https://github.com/AndreevP/wvmos
 
 black
 isort

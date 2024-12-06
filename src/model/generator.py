@@ -98,8 +98,8 @@ class Generator(nn.Module):
 
         self.lrelu2 = nn.LeakyReLU()
         self.post_conv = weight_norm(
-                nn.Conv1d(out_c, 1, prepost_conv_kernel_size, padding="same")
-            ).apply(init_weights)
+            nn.Conv1d(out_c, 1, prepost_conv_kernel_size, padding="same")
+        ).apply(init_weights)
 
         self.tanh = nn.Tanh()
 
@@ -119,7 +119,7 @@ class Generator(nn.Module):
             "pr_audio": x,
             "pr_spec": torch.log(self.get_spectrogram(x).squeeze(1) + 1e-5),
         }
-    
+
     def __str__(self):
         """
         Model prints with the number of parameters.

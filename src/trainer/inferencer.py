@@ -1,8 +1,11 @@
+import nltk
 import torch
 import torchaudio
+from hydra.utils import instantiate
 from torch import nn
 from tqdm.auto import tqdm
 
+from src.logger.utils import plot_spectrogram
 from src.metrics.tracker import MetricTracker
 from src.trainer.base_trainer import BaseTrainer
 
@@ -21,10 +24,11 @@ class Inferencer(BaseTrainer):
         generator,
         config,
         device,
-        dataloaders,
+        samples,
         save_path,
-        metrics=None,
-        batch_transforms=None,
+        text_to_mel_model="fastspeech2",
+        writer=None,
+        resynthesize=False,
         skip_model_load=False,
     ):
         """
@@ -57,26 +61,38 @@ class Inferencer(BaseTrainer):
         self.cfg_trainer = self.config.inferencer
 
         self.device = device
-
+        self.resynthesize = resynthesize
         self.generator = nn.DataParallel(generator)
-        self.batch_transforms = batch_transforms
-
-        # define dataloaders
-        self.evaluation_dataloaders = {k: v for k, v in dataloaders.items()}
-
+        self.samples = samples
+        self.writer = writer
         # path definition
-
         self.save_path = save_path
+        self.text_to_mel_model_type = text_to_mel_model
 
-        # define metrics
-        self.metrics = metrics
-        if self.metrics is not None:
-            self.evaluation_metrics = MetricTracker(
-                *[m.name for m in self.metrics["inference"]],
-                writer=None,
-            )
+        if not self.resynthesize:
+            if self.text_to_mel_model_type == "fastspeech2":
+                self.tokenizer = torch.load("text_to_mel_tokenizer.pt")
+                nltk.download("averaged_perceptron_tagger_eng")
+                self.text_to_mel_model = torch.load(
+                    "text_to_mel_model.pt", map_location=self.device
+                )
+            elif self.text_to_mel_model_type == "tacotron2":
+                self.tacotron2 = torch.hub.load(
+                    "NVIDIA/DeepLearningExamples:torchhub",
+                    "nvidia_tacotron2",
+                    model_math="fp16",
+                ).to(self.device)
+                self.tacotron2.eval()
+                self.tacotron2._modules["decoder"].max_decoder_steps = 5000
+                self.taco_utils = torch.hub.load(
+                    "NVIDIA/DeepLearningExamples:torchhub", "nvidia_tts_utils"
+                )
+            else:
+                raise ValueError(
+                    "Only fastspeech2 or tacotron2 for text_to_mel_model available"
+                )
         else:
-            self.evaluation_metrics = None
+            self.get_spec = instantiate(self.config.get_spectrogram).to(self.device)
 
         if not skip_model_load:
             # init model
@@ -90,13 +106,9 @@ class Inferencer(BaseTrainer):
             part_logs (dict): part_logs[part_name] contains logs
                 for the part_name partition.
         """
-        part_logs = {}
-        for part, dataloader in self.evaluation_dataloaders.items():
-            logs = self._inference_part(part, dataloader)
-            part_logs[part] = logs
-        return part_logs
-    
-    def _inference_part(self, part, dataloader):
+        self._inference_part()
+
+    def _inference_part(self):
         """
         Run inference on a given partition and save predictions
 
@@ -110,30 +122,23 @@ class Inferencer(BaseTrainer):
         self.is_train = False
         self.generator.eval()
 
-        self.evaluation_metrics.reset()
-
         # create Save dir
         if self.save_path is not None:
-            (self.save_path / 'gt_audio').mkdir(exist_ok=True, parents=True)
-            (self.save_path / 'pr_audio').mkdir(exist_ok=True, parents=True)
-
+            if self.resynthesize:
+                (self.save_path / "gt_audio").mkdir(exist_ok=True, parents=True)
+            (self.save_path / "pr_audio").mkdir(exist_ok=True, parents=True)
 
         with torch.no_grad():
             for batch_idx, batch in tqdm(
-                enumerate(dataloader),
-                desc=part,
-                total=len(dataloader),
+                enumerate(self.samples),
+                total=len(self.samples),
             ):
                 batch = self.process_batch(
                     batch_idx=batch_idx,
                     batch=batch,
-                    part=part,
-                    metrics=self.evaluation_metrics,
                 )
 
-        return self.evaluation_metrics.result()
-
-    def process_batch(self, batch_idx, batch, metrics, part):
+    def process_batch(self, batch_idx, batch):
         """
         Run batch through the model, compute metrics, and
         save predictions to disk.
@@ -156,46 +161,63 @@ class Inferencer(BaseTrainer):
                 and model outputs.
         """
         batch = self.move_batch_to_device(batch)
-        batch = self.transform_batch(batch)  # transform batch on device -- faster
+
+        if not self.resynthesize:
+            if self.text_to_mel_model_type == "fastspeech2":
+                inputs = self.tokenizer(batch["text"], return_tensors="pt")
+                input_ids = inputs["input_ids"].to(self.device)
+                output_dict = self.text_to_mel_model(input_ids, return_dict=True)
+                batch["gt_spec"] = output_dict["spectrogram"].transpose(1, 2)
+            else:
+                sequences, lengths = self.taco_utils.prepare_input_sequence(
+                    [batch["text"]]
+                )
+                with torch.no_grad():
+                    mel, _, _ = self.tacotron2.infer(sequences, lengths)
+                batch["gt_spec"] = mel
+        else:
+            assert "get_spectrogram" in self.config
+
+            batch["gt_spec"] = torch.log(self.get_spec(batch["gt_audio"]) + 1e-5)
 
         outputs = self.generator(**batch)
         batch.update(outputs)
 
-        if metrics is not None:
-            for met in self.metrics["inference"]:
-                metrics.update(met.name, met(**batch))
-
         # Some saving logic. This is an example
         # Use if you need to save predictions on disk
-
-        batch_size = batch["gt_audio"].shape[0]
+        batch_size = 1
         current_id = batch_idx * batch_size
+        self.writer.set_step(current_id)
 
         for i in range(batch_size):
             # clone because of
             # https://github.com/pytorch/pytorch/issues/1995
-            ground_truth = batch["gt_audio"][i].clone()
+            if self.resynthesize:
+                ground_truth = batch["gt_audio"][i].clone()
             predict = batch["pr_audio"][i].clone()
 
-            output_id = current_id + i
+            if self.resynthesize:
+                torchaudio.save(
+                    self.save_path / "gt_audio" / str(batch["filename"] + ".wav"),
+                    ground_truth.unsqueeze(0).cpu(),
+                    22050,
+                    channels_first=True,
+                )
+                self.log_audio(ground_truth.unsqueeze(0), "gt_audio")
 
             torchaudio.save(
-                self.save_path / "gt_audio" / f'audio_{output_id}.pth',
-                ground_truth.cpu(),
-                22050,
-                channels_first=True,
-                format='flac'
-            )
-            torchaudio.save(
-                self.save_path / "pr_audio" / f'audio_{output_id}.pth',
+                self.save_path / "pr_audio" / str(batch["filename"] + ".wav"),
                 predict.cpu(),
                 22050,
                 channels_first=True,
-                format='flac'
             )
+            self.log_audio(predict, "pr_audio")
+
+            self.log_spectrogram(batch["gt_spec"], "gt_spec")
+            self.log_spectrogram(batch["pr_spec"], "pr_spec")
 
         return batch
-    
+
     def _from_pretrained(self, pretrained_path):
         """
         Init model with weights from pretrained pth file.
@@ -214,9 +236,17 @@ class Inferencer(BaseTrainer):
             print(f"Loading model weights from: {pretrained_path} ...")
         checkpoint = torch.load(pretrained_path, self.device)
 
-        if (
-            checkpoint.get("state_dict_g") is not None
-        ):
+        if checkpoint.get("state_dict_g") is not None:
             self.generator.load_state_dict(checkpoint["state_dict_g"])
         else:
-            raise ValueError("state_dicts should be in the checkpoint")
+            raise ValueError("state_dict should be in the checkpoint")
+
+    def log_audio(self, audio, name):
+        if self.writer is not None:
+            self.writer.add_audio(name, audio[0], 22050)
+
+    def log_spectrogram(self, spec, name):
+        if self.writer is not None:
+            spectrogram_for_plot = spec[0].detach().cpu()
+            image = plot_spectrogram(spectrogram_for_plot)
+            self.writer.add_image(name, image)

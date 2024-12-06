@@ -117,3 +117,4 @@ __MACOSX/
 *.pth
 runs/
 *.sbatch
+*.pt
