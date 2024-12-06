@@ -111,11 +111,25 @@ class Generator(nn.Module):
             x_summator = self.resblocks[i * self.num_kernels](x)
             for j in range(self.num_kernels):
                 x_summator += self.resblocks[i * self.num_kernels + j](x)
-            x_means = x_summator / self.num_kernels
 
-        x = self.tanh(self.post_conv(self.lrelu2(x_means)))
+        x = self.tanh(self.post_conv(self.lrelu2(x_summator)))
 
         return {
             "pr_audio": x,
             "pr_spec": torch.log(self.get_spectrogram(x).squeeze(1) + 1e-5),
         }
+    
+    def __str__(self):
+        """
+        Model prints with the number of parameters.
+        """
+        all_parameters = sum([p.numel() for p in self.parameters()])
+        trainable_parameters = sum(
+            [p.numel() for p in self.parameters() if p.requires_grad]
+        )
+
+        result_info = super().__str__()
+        result_info = result_info + f"\nAll parameters: {all_parameters}"
+        result_info = result_info + f"\nTrainable parameters: {trainable_parameters}"
+
+        return result_info
