@@ -36,7 +36,7 @@ def main(config):
     # setup data_loader instances
     # batch_transforms should be put on device
     dataloaders, batch_transforms = get_dataloaders(config, device)
-
+    
     # build model architecture, then print to console
     generator = instantiate(config.generator.model).to(device)
     discriminator = instantiate(config.discriminator.model).to(device)

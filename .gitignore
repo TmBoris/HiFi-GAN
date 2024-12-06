@@ -115,3 +115,5 @@ __MACOSX/
 
 *.ipynb
 *.pth
+runs/
+*.sbatch
