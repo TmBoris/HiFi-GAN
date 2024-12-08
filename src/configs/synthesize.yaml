@@ -1,6 +1,6 @@
 defaults:
   - generator: hifi_gen
-  - writer: null
+  - writer: wandb
   - _self_
 inferencer:
   device_tensors: ["gt_audio"] # which tensors should be on device (ex. GPU)

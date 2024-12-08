@@ -67,7 +67,7 @@ Follow these steps to install the project:
    ```
    Run the following command:
    ```bash
-   python synthesize.py input_text_dir=DIR_PATH save_path=SAVE_PATH
+   python synthesize.py inferencer.input_text_dir=DIR_PATH inferencer.save_path=SAVE_PATH
    ```
    where `DIR_PATH` is directory with text and `SAVE_PATH` is a path to save synthesized audio.
 
@@ -84,7 +84,7 @@ Follow these steps to install the project:
    ```
    Run the following command:
    ```bash
-   python synthesize.py input_audio_dir=DIR_PATH save_path=SAVE_PATH
+   python synthesize.py inferencer.input_audio_dir=DIR_PATH inferencer.save_path=SAVE_PATH
    ```
    where `DIR_PATH` is directory with utterences and `SAVE_PATH` is a path to save resynthesized audio.
 
