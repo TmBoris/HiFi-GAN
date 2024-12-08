@@ -110,30 +110,29 @@ Audios presented in order <ground truth audio/predict>
 
 - `Mihajlo Pupin was a founding member of National Advisory Committee for Aeronautics (NACA) on 3 March 1915, which later became NASA, and he participated in the founding ofAmerican Mathematical Society and American Physical Society.`
 
-<audio controls src="data/saved/resynth_grading_with_ft/gt_audio/pupin.wav" title="gt_audio"></audio>
-<audio controls src="data/saved/resynth_grading_with_ft/pr_audio/pupin.wav" title="predict"></audio>
 
+https://github.com/user-attachments/assets/ad5aabcc-9ca6-4297-a16b-709605d51709
+https://github.com/user-attachments/assets/e00ed576-5880-4569-9740-3740ee0fd524
 
 - `Leonard Bernstein was an American conductor, composer, pianist, music educator, author, and humanitarian. Considered to be one of the most important conductors of his time, he was the first American-born conductor to receive international acclaim.`
 
-<audio controls src="data/saved/resynth_grading_with_ft/gt_audio/bernstein.wav" title="gt_audio"></audio>
-<audio controls src="data/saved/resynth_grading_with_ft/pr_audio/bernstein.wav" title="predict"></audio>
+https://github.com/user-attachments/assets/ca11d5ff-fd96-420d-a04e-c9997b568122
+https://github.com/user-attachments/assets/86737342-d41a-402f-8930-ac6ed3ac5403
 
 - `Lev Termen, better known as Leon Theremin was a Russian inventor, most famous for his invention of the theremin, one of the first electronic musical instruments and the first to be mass-produced.`
 
-<audio controls src="data/saved/resynth_grading_with_ft/gt_audio/theremin.wav" title="gt_audio"></audio>
-<audio controls src="data/saved/resynth_grading_with_ft/pr_audio/theremin.wav" title="predict"></audio>
+https://github.com/user-attachments/assets/d7e084c5-0af8-4aed-95b1-5f25f8ec9d24
+https://github.com/user-attachments/assets/f59ec89c-7ac1-40d7-a484-93035e5c95da
 
 - `Deep Learning in Audio course at HSE University offers an exciting and challenging exploration of cutting-edge techniques in audio processing, from speech recognition to music analysis. With complex homeworks that push students to apply theory to real-world problems, it provides a hands-on, rigorous learning experience that is both demanding and rewarding.`
 
-<audio controls src="data/saved/resynth_grading_with_ft/gt_audio/dla.wav" title="gt_audio"></audio>
-<audio controls src="data/saved/resynth_grading_with_ft/pr_audio/dla.wav" title="predict"></audio>
+https://github.com/user-attachments/assets/e92b4589-b9da-4ba7-ba9b-2f0e3c2b3fa6
+https://github.com/user-attachments/assets/a386eaf2-2867-4caa-b445-4d5ea2fee6f1
 
 - `Dmitri Shostakovich was a Soviet-era Russian composer and pianist who became internationally known after the premiere of his First Symphony in 1926 and thereafter was regarded as a major composer.`
 
-<audio controls src="data/saved/resynth_grading_with_ft/gt_audio/shostakovich.wav" title="gt_audio"></audio>
-<audio controls src="data/saved/resynth_grading_with_ft/pr_audio/shostakovich.wav" title="predict"></audio>
-
+https://github.com/user-attachments/assets/bd940f23-0e8c-4942-b11d-308f06988106
+https://github.com/user-attachments/assets/9a8c8dbf-ac04-40e2-86c2-4e2ef7d0c8dd
 
  `WV-MOS=2.78`.
 
