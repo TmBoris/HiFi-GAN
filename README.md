@@ -50,9 +50,9 @@ Follow these steps to install the project:
 1) If you only want to synthesize one text/phrase and save it, run the following command:
 
    ```bash
-   python synthesize.py 'text="YOUR_TEXT"' save_path=SAVE_PATH
+   python synthesize.py 'inferencer.input_text="TEXT"' inferencer.save_path=SAVE_PATH
    ```
-   where `SAVE_PATH` is a path to save synthesize audio. Please be careful in quotes.
+   where `SAVE_PATH` is a path to save synthesized audio.
 
 2) If you want to synthesize audio from text files, your directory with text should has the following format:
    ```
@@ -67,16 +67,41 @@ Follow these steps to install the project:
    ```
    Run the following command:
    ```bash
-   python synthesize.py dir_path=DIR_PATH save_path=SAVE_PATH
+   python synthesize.py input_text_dir=DIR_PATH save_path=SAVE_PATH
    ```
-   where `DIR_PATH` is directory with text and `SAVE_PATH` is a path to save synthesize audio.
+   where `DIR_PATH` is directory with text and `SAVE_PATH` is a path to save synthesized audio.
+
+2) If you want to resynthesize audio from .wav files, your directory with utterences should has the following format:
+   ```
+   NameOfTheDirectoryWithUtterances
+   └── audios
+        ├── UtteranceID1.wav
+        ├── UtteranceID2.wav
+        .
+        .
+        .
+        └── UtteranceIDn.wav
+   ```
+   Run the following command:
+   ```bash
+   python synthesize.py input_audio_dir=DIR_PATH save_path=SAVE_PATH
+   ```
+   where `DIR_PATH` is directory with utterences and `SAVE_PATH` is a path to save resynthesized audio.
 
 ### Training
 
 To reproduce this model, run the following command:
 
    ```bash
-   python train.py
+   python train.py \
+      writer.run_name=RUN_NAME \
+
+
+   python train.py \
+      datasets.train.max_audio_length=32768 \
+      datasets.val.max_audio_length=32768 \
+      trainer.n_epochs=15 \
+      +trainer.from_pretrained="saved/RUN_NAME/model_best.pth"
    ```
 
 ## Final results

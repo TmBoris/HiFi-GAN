@@ -3,9 +3,9 @@ defaults:
   - generator: hifi_gen
   - writer: wandb
   - metrics: vocoder_metrics
-  - datasets: ljspeech_onebatch
-  - dataloader: example
-  - transforms: example
+  - datasets: ljspeech_dataset
+  - dataloader: loader
+  - transforms: transforms
   - _self_
 optim_g:
   _target_: torch.optim.AdamW
@@ -27,7 +27,7 @@ discr_loss:
   _target_: src.loss.DiscriminatorLoss
 trainer:
   log_step: 50
-  n_epochs: 100
+  n_epochs: 200
   epoch_len: 500
   device_tensors: ["gt_spec", "gt_audio", "length"] # which tensors should be on device (ex. GPU)
   resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
@@ -38,5 +38,5 @@ trainer:
   early_stop: ${trainer.n_epochs} # epochs for early stopping
   save_dir: "saved"
   seed: 1
-  max_grad_norm_generator: 10
+  max_grad_norm_generator: 15
   max_grad_norm_discriminator: 15

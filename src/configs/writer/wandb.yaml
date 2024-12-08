@@ -4,6 +4,5 @@ entity: null
 run_name: "resynth_on_ljspeech"
 mode: "online"
 loss_names: ["gen_loss", "discr_loss", 'loss_disc_mpd', 'loss_disc_msd', 'adv_gen_loss', 'feature_loss', 'mel_loss'] # which losses to log (useful for multi-loss tasks, s.a. GANs)
-# loss_names: ["gen_loss"]
 log_checkpoints: False # set to True if you want to log save_dir with checkpoints to W&B
 id_length: 8 # length of the run_id

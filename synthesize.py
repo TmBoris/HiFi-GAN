@@ -26,13 +26,13 @@ def main(config):
     """
     set_random_seed(config.inferencer.seed)
 
-    if config.writer is not None:
-        project_config = OmegaConf.to_container(config)
-        logger = logging.getLogger("synth")
-        logger.setLevel(logging.DEBUG)
-        writer = instantiate(config.writer, logger, project_config)
-    else:
-        writer = None
+    # if config.writer is not None:
+    #     project_config = OmegaConf.to_container(config)
+    #     logger = logging.getLogger("synth")
+    #     logger.setLevel(logging.DEBUG)
+    #     writer = instantiate(config.writer, logger, project_config)
+    # else:
+    #     writer = None
 
     if config.inferencer.device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -43,7 +43,7 @@ def main(config):
         dataset = CustomTextDirDataset(ROOT_PATH / config.inferencer.input_text_dir)
         samples = dataset.get_texts()
     elif config.inferencer.input_text is not None:
-        samples = [config.inferencer.input_text]
+        samples = [{"text": config.inferencer.input_text, "filename": "example"}]
     elif config.inferencer.input_audio_dir is not None:
         dataset = CustomAudioDirDataset(ROOT_PATH / config.inferencer.input_audio_dir)
         samples = dataset.get_audios()
@@ -66,7 +66,7 @@ def main(config):
         device=device,
         samples=samples,
         save_path=save_path,
-        writer=writer,
+        # writer=writer,
         text_to_mel_model=config.inferencer.text_to_mel_model,
         resynthesize=(config.inferencer.input_audio_dir is not None),
         skip_model_load=False,

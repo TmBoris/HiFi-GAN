@@ -187,7 +187,8 @@ class Inferencer(BaseTrainer):
         # Use if you need to save predictions on disk
         batch_size = 1
         current_id = batch_idx * batch_size
-        self.writer.set_step(current_id)
+        if self.writer is not None:
+            self.writer.set_step(current_id)
 
         for i in range(batch_size):
             # clone because of

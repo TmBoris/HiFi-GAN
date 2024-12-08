@@ -1,17 +1,17 @@
 defaults:
   - generator: hifi_gen
-  - writer: wandb
+  - writer: null
   - _self_
 inferencer:
   device_tensors: ["gt_audio"] # which tensors should be on device (ex. GPU)
   device: auto # device name or "auto"
-  save_path: "fs2_synth_grading_with_ft" # any name here, can be a dataset name
-  input_text_dir: data/datasets/grading_audios
+  save_path: null # any name here, can be a dataset name
+  input_text_dir: null
   input_text: null
   input_audio_dir: null
   seed: 1
   text_to_mel_model: fastspeech2 # fastspeech2 or tacotron2 available
-  from_pretrained: "saved/vanilla_train|mrf_fix_ft/model_best.pth"
+  from_pretrained: "saved/best_model/model_best.pth"
   # from_pretrained: "saved/vanilla_train|mrf_fix/checkpoint-epoch200.pth"
 get_spectrogram:
   _target_: torchaudio.transforms.MelSpectrogram

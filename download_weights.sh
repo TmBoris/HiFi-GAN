@@ -1,3 +1,3 @@
-gdown --id 1trY0OWpSh7L_k6GhGMzr1Gs8hXLmPQrl
+gdown --id 1Cm0-agzp5f_Zs9wxoUEZO0ZWuy39zW3a
 mkdir -p saved/best_model
-mv checkpoint-epoch115.pth saved/best_model/model_best.pth
+mv model_best_ft.pth saved/best_model/model_best.pth
