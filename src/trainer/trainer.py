@@ -106,6 +106,9 @@ class Trainer(BaseTrainer):
             self.log_spectrogram(**batch)
 
     def log_spectrogram(self, gt_spec, pr_spec, **batch):
+        """
+        Log spectrograms in writer
+        """
         spectrogram_for_plot = gt_spec[0].detach().cpu()
         image = plot_spectrogram(spectrogram_for_plot)
         self.writer.add_image("gt_spec", image)
@@ -115,5 +118,8 @@ class Trainer(BaseTrainer):
         self.writer.add_image("pr_spec", image)
 
     def log_predictions(self, gt_audio, pr_audio, **batch):
+        """
+        Log audios in writer
+        """
         self.writer.add_audio("gt_audio", gt_audio[0], 22050)
         self.writer.add_audio("pr_audio", pr_audio[0], 22050)

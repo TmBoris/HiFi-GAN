@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import shutil
-from curses.ascii import isascii
 from pathlib import Path
 
 import torchaudio
@@ -68,7 +67,7 @@ class LJspeechDataset(BaseDataset):
             self._load_dataset()
 
         wav_dirs = set()
-        for dirpath, dirnames, filenames in os.walk(str(split_dir)):
+        for dirpath, _, filenames in os.walk(str(split_dir)):
             if any([f.endswith(".wav") for f in filenames]):
                 wav_dirs.add(dirpath)
         for wav_dir in tqdm(list(wav_dirs), desc=f"Preparing ljspeech folders: {part}"):

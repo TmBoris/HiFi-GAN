@@ -35,19 +35,15 @@ class Inferencer(BaseTrainer):
         Initialize the Inferencer.
 
         Args:
-            model (nn.Module): PyTorch model.
+            generator (nn.Module): PyTorch model.
             config (DictConfig): run config containing inferencer config.
             device (str): device for tensors and model.
-            dataloaders (dict[DataLoader]): dataloaders for different
-                sets of data.
+            samples (list[dict]): list with samples
             save_path (str): path to save model predictions and other
                 information.
-            metrics (dict): dict with the definition of metrics for
-                inference (metrics[inference]). Each metric is an instance
-                of src.metrics.BaseMetric.
-            batch_transforms (dict[nn.Module] | None): transforms that
-                should be applied on the whole batch. Depend on the
-                tensor name.
+            text_to_mel_model (str): type of text to mel model
+            writer (Any): writer or None
+            resynthesize (bool): to synthesize ot to resythesize
             skip_model_load (bool): if False, require the user to set
                 pre-trained checkpoint path. Set this argument to True if
                 the model desirable weights are defined outside of the
@@ -101,22 +97,12 @@ class Inferencer(BaseTrainer):
     def run_inference(self):
         """
         Run inference on each partition.
-
-        Returns:
-            part_logs (dict): part_logs[part_name] contains logs
-                for the part_name partition.
         """
         self._inference_part()
 
     def _inference_part(self):
         """
         Run inference on a given partition and save predictions
-
-        Args:
-            part (str): name of the partition.
-            dataloader (DataLoader): dataloader for the given partition.
-        Returns:
-            logs (dict): metrics, calculated on the partition.
         """
 
         self.is_train = False
@@ -140,7 +126,7 @@ class Inferencer(BaseTrainer):
 
     def process_batch(self, batch_idx, batch):
         """
-        Run batch through the model, compute metrics, and
+        Run batch through the model and
         save predictions to disk.
 
         Save directory is defined by save_path in the inference
@@ -150,11 +136,6 @@ class Inferencer(BaseTrainer):
             batch_idx (int): the index of the current batch.
             batch (dict): dict-based batch containing the data from
                 the dataloader.
-            metrics (MetricTracker): MetricTracker object that computes
-                and aggregates the metrics. The metrics depend on the type
-                of the partition (train or inference).
-            part (str): name of the partition. Used to define proper saving
-                directory.
         Returns:
             batch (dict): dict-based batch containing the data from
                 the dataloader (possibly transformed via batch transform)
@@ -243,10 +224,16 @@ class Inferencer(BaseTrainer):
             raise ValueError("state_dict should be in the checkpoint")
 
     def log_audio(self, audio, name):
+        """
+        Log audios in writer
+        """
         if self.writer is not None:
             self.writer.add_audio(name, audio[0], 22050)
 
     def log_spectrogram(self, spec, name):
+        """
+        Log spectrograms in writer
+        """
         if self.writer is not None:
             spectrogram_for_plot = spec[0].detach().cpu()
             image = plot_spectrogram(spectrogram_for_plot)

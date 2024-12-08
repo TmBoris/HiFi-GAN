@@ -104,6 +104,14 @@ class Generator(nn.Module):
         self.tanh = nn.Tanh()
 
     def forward(self, gt_spec, **batch):
+        """
+        Model forward method.
+
+        Args:
+            gt_spec (Tensor): Ground truth MelSpectrogram.
+        Returns:
+            output (tuple): output dict containing predicted audio and its MelSpectrogram.
+        """
         x = self.pre_conv(gt_spec)
 
         for i in range(len(self.ups)):

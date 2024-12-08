@@ -161,29 +161,6 @@ class BaseDataset(Dataset):
         return instance_data
 
     @staticmethod
-    def _filter_records_from_dataset(
-        index: list,
-    ) -> list:
-        """
-        Filter some of the elements from the dataset depending on
-        some condition.
-
-        This is not used in the example. The method should be called in
-        the __init__ before shuffling and limiting.
-
-        Args:
-            index (list[dict]): list, containing dict for each element of
-                the dataset. The dict has required metadata information,
-                such as label and object path.
-        Returns:
-            index (list[dict]): list, containing dict for each element of
-                the dataset that satisfied the condition. The dict has
-                required metadata information, such as label and object path.
-        """
-        # Filter logic
-        pass
-
-    @staticmethod
     def _assert_index_is_valid(index):
         """
         Check the structure of the index and ensure it satisfies the desired

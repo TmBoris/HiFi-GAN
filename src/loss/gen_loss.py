@@ -8,6 +8,17 @@ class GeneratorLoss(nn.Module):
         super().__init__()
 
     def forward(self, mpd_output, msd_output, gt_spec, pr_spec, **batch):
+        """
+        Generator Loss calculation logic.
+
+        Args:
+            mpd_output (tuple): MultyPeriodDiscriminator output.
+            msd_output (tuple): MultyScaleDiscriminator output.
+            gt_spec (Tensor): ground truth MelSpectrogram.
+            pr_spec (Tensor): MelSpectrogram of predicted audio.
+        Returns:
+            losses (dict): dict containing calculated loss functions.
+        """
         _, mpd_pr_audio_finals, mpd_gt_audio_states, mpd_pr_audio_states = mpd_output
         _, msd_pr_audio_finals, msd_gt_audio_states, msd_pr_audio_states = msd_output
 

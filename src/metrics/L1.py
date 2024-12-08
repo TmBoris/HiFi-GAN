@@ -10,4 +10,13 @@ class L1(BaseMetric):
         self.metric = l1_loss
 
     def __call__(self, gt_spec, pr_spec, **kwargs):
+        """
+        Metric calculation logic.
+
+        Args:
+            gt_spec (Tensor): ground truth MelSpectrogram.
+            pr_spec (Tensor): MelSpectrogram of predicted audio.
+        Returns:
+            metric (float): calculated metric.
+        """
         return self.metric(gt_spec, pr_spec)

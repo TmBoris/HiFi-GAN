@@ -8,6 +8,18 @@ class DiscriminatorLoss(nn.Module):
         super().__init__()
 
     def forward(self, mpd_output, msd_output, **batch):
+        """
+        Discriminator Loss calculation logic.
+
+        Args:
+            mpd_output (tuple): MultyPeriodDiscriminator output.
+            msd_output (tuple): MultyScaleDiscriminator output.
+        Returns:
+            losses (dict): dict containing calculated loss functions.
+        """
+        assert len(mpd_output) == 4, "wrong shape of mpd_output"
+        assert len(msd_output) == 4, "wrong shape of msd_output"
+
         mpd_gt_audio_finals, mpd_pr_audio_finals, _, _ = mpd_output
         msd_gt_audio_finals, msd_pr_audio_finals, _, _ = msd_output
         loss_disc_mpd = self.discriminator_loss(

@@ -29,9 +29,4 @@ def collate_fn(dataset_items: list[dict]):
         [sample["audio"] for sample in dataset_items]
     )
 
-    # print(result_batch["gt_spec"].shape)
-    # print(result_batch["gt_audio"].shape)
-
-    # raise
-
     return result_batch
